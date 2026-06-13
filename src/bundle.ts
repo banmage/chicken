@@ -7,17 +7,23 @@ namespace CCR {
     // ==================== 常量定义 ====================
     export const GAME_WIDTH = 1000;
     export const GAME_HEIGHT = 600;
-    export const BOTTOM_BANK_Y = 550;
+    // 水平河岸（底部出发、顶部到达）
+    export const BOTTOM_BANK_Y = 560;
     export const TOP_BANK_Y = 0;
-    export const BANK_HEIGHT = 50;
-    export const LANE_HEIGHT = 40;
-    export const LANE_GAP = 70;
-    export const CHICKEN_WIDTH = 40;
-    export const CHICKEN_HEIGHT = 40;
-    export const BOAT_HEIGHT = 35;
-    export const OBSTACLE_WIDTH = 40;
-    export const OBSTACLE_HEIGHT = 30;
-    export const JUMP_DURATION = 300;
+    export const BANK_HEIGHT = 40;
+    // 河道设置（垂直排列，水平移动）
+    export const LANE_GAP = 75;
+    // 小鸡设置
+    export const CHICKEN_WIDTH = 36;
+    export const CHICKEN_HEIGHT = 36;
+    // 船设置（船水平放置，在垂直河道中左右移动）
+    export const BOAT_WIDTH = 55;
+    export const BOAT_HEIGHT = 28;
+    // 障碍物设置
+    export const OBSTACLE_WIDTH = 35;
+    export const OBSTACLE_HEIGHT = 25;
+    // 跳跃设置
+    export const JUMP_DURATION = 280;
     export const SAFE_STAY_TIME = 500;
     export const STORAGE_PREFIX = "CCR_";
 
@@ -265,16 +271,19 @@ namespace CCR {
 
         private createView(): void {
             this.graphics.clear();
+            // 船水平放置
             this.graphics.drawRect(0, 0, this.boatWidth, BOAT_HEIGHT, '#8B4513');
-            this.graphics.drawRect(5, 5, this.boatWidth - 10, BOAT_HEIGHT - 10, '#A0522D');
+            this.graphics.drawRect(3, 3, this.boatWidth - 6, BOAT_HEIGHT - 6, '#A0522D');
             this.size(this.boatWidth, BOAT_HEIGHT);
         }
 
         public update(): void {
             const difficulty = DifficultyManager.getInstance();
             const actualSpeed = this.speed * difficulty.getSpeedMultiplier();
+            // 船在水平方向移动
             this.x += this.direction * actualSpeed;
 
+            // 边界检测
             if (this.x + this.boatWidth < 0) {
                 this.x = GAME_WIDTH;
             } else if (this.x > GAME_WIDTH) {
@@ -285,6 +294,8 @@ namespace CCR {
         public getRight(): number { return this.x + this.boatWidth; }
         public getCenterX(): number { return this.x + this.boatWidth / 2; }
         public getWidth(): number { return this.boatWidth; }
+        public getDirection(): number { return this.direction; }
+        public getSpeed(): number { return this.speed; }
         public containsPoint(x: number): boolean { return x >= this.x && x <= this.x + this.boatWidth; }
     }
 
@@ -302,12 +313,16 @@ namespace CCR {
 
         private createView(): void {
             this.graphics.clear();
+            // 绘制鳄鱼形状（椭圆形）
             this.graphics.drawEllipse(OBSTACLE_WIDTH / 2, OBSTACLE_HEIGHT / 2, OBSTACLE_WIDTH / 2, OBSTACLE_HEIGHT / 2, '#228B22');
-            this.graphics.drawCircle(OBSTACLE_WIDTH / 2, OBSTACLE_HEIGHT / 3, 8, '#006400');
+            // 眼睛
+            this.graphics.drawCircle(OBSTACLE_WIDTH / 3, OBSTACLE_HEIGHT / 3, 4, '#006400');
+            this.graphics.drawCircle(OBSTACLE_WIDTH * 2 / 3, OBSTACLE_HEIGHT / 3, 4, '#006400');
             this.size(OBSTACLE_WIDTH, OBSTACLE_HEIGHT);
         }
 
         public update(): void {
+            // 障碍物在水平方向移动
             this.x += this.direction * this.speed;
             if (this.x + OBSTACLE_WIDTH < 0) {
                 this.x = GAME_WIDTH;
@@ -637,6 +652,8 @@ namespace CCR {
         private helpButton!: SimpleButton;
         private levelText!: Laya.Text;
         private assistMode!: boolean;
+        private menuChicken!: Laya.Sprite; // 菜单动画小鸡
+        private titleText!: Laya.Text;
 
         constructor() {
             super();
@@ -644,49 +661,119 @@ namespace CCR {
         }
 
         private createUI(): void {
-            this.graphics.drawRect(0, 0, GAME_WIDTH, GAME_HEIGHT, '#87CEEB');
+            // 深色渐变背景
+            this.graphics.drawRect(0, 0, GAME_WIDTH, GAME_HEIGHT, '#1a1a2e');
+            
+            // 顶部装饰条
+            this.graphics.drawRect(0, 0, GAME_WIDTH, 100, '#16213e');
+            
+            // 底部装饰条
+            this.graphics.drawRect(0, GAME_HEIGHT - 100, GAME_WIDTH, 100, '#16213e');
+            
+            // 左侧装饰线
+            this.graphics.drawRect(0, 80, 6, GAME_HEIGHT - 160, '#e94560');
+            
+            // 右侧装饰线
+            this.graphics.drawRect(GAME_WIDTH - 6, 80, 6, GAME_HEIGHT - 160, '#e94560');
 
-            const title = new Laya.Text();
-            title.text = '小鸡过河';
-            title.fontSize = 48;
-            title.color = '#FFD700';
-            title.bold = true;
-            title.pos(350, 100);
-            this.addChild(title);
+            // 标题背景
+            this.graphics.drawRect(200, 85, 600, 90, '#0f3460');
+            this.graphics.drawRect(195, 80, 610, 5, '#e94560'); // 标题上装饰线
 
-            const chicken = new Laya.Sprite();
-            chicken.pos(480, 180);
-            chicken.graphics.drawCircle(20, 20, 20, '#FFD700');
-            chicken.graphics.drawCircle(13, 13, 3, '#000');
-            chicken.graphics.drawCircle(27, 13, 3, '#000');
-            this.addChild(chicken);
+            // 标题
+            this.titleText = new Laya.Text();
+            this.titleText.text = '小鸡过河';
+            this.titleText.fontSize = 54;
+            this.titleText.color = '#FFD700';
+            this.titleText.bold = true;
+            this.titleText.pos(250, 100);
+            this.addChild(this.titleText);
+
+            // 副标题
+            const subtitle = new Laya.Text();
+            subtitle.text = 'Chicken Crossing River';
+            subtitle.fontSize = 16;
+            subtitle.color = '#7ec8e3';
+            subtitle.pos(370, 155);
+            this.addChild(subtitle);
+
+            // 创建动画小鸡
+            this.menuChicken = new Laya.Sprite();
+            this.menuChicken.pos(GAME_WIDTH / 2, 290);
+            this.drawMenuChicken(this.menuChicken);
+            this.addChild(this.menuChicken);
+            
+            // 启动小鸡动画
+            Laya.timer.frameLoop(1, this, this.animateMenuChicken);
+            
+            // 按钮区域背景
+            this.graphics.drawRect(320, 350, 360, 200, '#0f3460');
+            this.graphics.drawRect(315, 345, 370, 5, '#e94560');
 
             this.startButton = new SimpleButton('开始游戏');
-            this.startButton.size(200, 60);
-            this.startButton.pos(400, 300);
+            this.startButton.size(220, 60);
+            this.startButton.pos(390, 370);
             this.startButton.on(Laya.Event.CLICK, this, this.onStartClick);
             this.addChild(this.startButton);
 
             this.assistMode = StorageHelper.getAssistMode();
-            this.assistToggle = new SimpleButton(this.assistMode ? '辅助模式: 开' : '辅助模式: 关');
-            this.assistToggle.size(150, 40);
-            this.assistToggle.pos(425, 380);
+            this.assistToggle = new SimpleButton(this.assistMode ? '辅助模式: 开启' : '辅助模式: 关闭');
+            this.assistToggle.size(160, 45);
+            this.startButton.pos(390, 370);
             this.assistToggle.on(Laya.Event.CLICK, this, this.onAssistToggle);
             this.addChild(this.assistToggle);
+            
+            // 重新定位辅助按钮
+            this.assistToggle.x = 420;
+            this.assistToggle.y = 450;
 
             const highestLevel = StorageHelper.getHighestLevel();
             this.levelText = new Laya.Text();
             this.levelText.text = `最高关卡: ${highestLevel}`;
-            this.levelText.fontSize = 20;
-            this.levelText.color = '#333';
-            this.levelText.pos(425, 450);
+            this.levelText.fontSize = 22;
+            this.levelText.color = '#7ec8e3';
+            this.levelText.pos(420, 505);
             this.addChild(this.levelText);
 
-            this.helpButton = new SimpleButton('帮助');
-            this.helpButton.size(80, 30);
-            this.helpButton.pos(460, 500);
+            this.helpButton = new SimpleButton('游戏说明');
+            this.helpButton.size(120, 35);
+            this.helpButton.pos(440, 545);
             this.helpButton.on(Laya.Event.CLICK, this, this.onHelpClick);
             this.addChild(this.helpButton);
+            
+            // 版本信息
+            const version = new Laya.Text();
+            version.text = 'v1.0.0';
+            version.fontSize = 12;
+            version.color = '#555';
+            version.pos(GAME_WIDTH - 50, GAME_HEIGHT - 25);
+            this.addChild(version);
+        }
+        
+        private drawMenuChicken(sprite: Laya.Sprite): void {
+            sprite.graphics.clear();
+            // 身体
+            sprite.graphics.drawCircle(0, 0, 32, '#FFD700');
+            // 眼睛
+            sprite.graphics.drawCircle(-12, -8, 6, '#000');
+            sprite.graphics.drawCircle(12, -8, 6, '#000');
+            // 眼睛高光
+            sprite.graphics.drawCircle(-10, -10, 2, '#FFF');
+            sprite.graphics.drawCircle(14, -10, 2, '#FFF');
+            // 嘴巴
+            sprite.graphics.drawRect(-6, 6, 12, 6, '#FF6B35');
+            // 鸡冠
+            sprite.graphics.drawEllipse(0, -38, 10, 18, '#FF4444');
+        }
+        
+        private menuChickenAngle: number = 0;
+        private menuChickenY: number = 290;
+        
+        private animateMenuChicken(): void {
+            // 左右摆动动画
+            this.menuChickenAngle += 0.04;
+            this.menuChicken.x = GAME_WIDTH / 2 + Math.sin(this.menuChickenAngle) * 60;
+            this.menuChicken.y = this.menuChickenY + Math.sin(this.menuChickenAngle * 2.5) * 10;
         }
 
         private onStartClick(): void {
@@ -704,11 +791,16 @@ namespace CCR {
         }
 
         private updateAssistToggle(): void {
-            this.assistToggle.label = this.assistMode ? '辅助模式: 开' : '辅助模式: 关';
+            this.assistToggle.label = this.assistMode ? '辅助模式: 开启' : '辅助模式: 关闭';
         }
 
         public updateHighestLevel(level: number): void {
             this.levelText.text = `最高关卡: ${level}`;
+        }
+        
+        public destroy(): void {
+            Laya.timer.clearAll(this);
+            super.destroy();
         }
     }
 
@@ -1226,7 +1318,7 @@ namespace CCR {
             const riverEndY = BOTTOM_BANK_Y;
             const riverHeight = riverEndY - riverStartY;
             
-            // 绘制不同深浅的蓝色条纹区分河道
+            // 计算实际河道数量
             const actualLanes = Math.max(1, Math.floor((riverHeight - LANE_GAP) / LANE_GAP));
             
             // 使用两种深浅相近的蓝色交替
@@ -1240,15 +1332,30 @@ namespace CCR {
         }
 
         private createBanks(): void {
+            // 底部赭红色河岸（出发区域）
             const bottomBank = new Laya.Sprite();
-            // 绘制赭红色的土岸边（直接作为小鸡出发的起点岸边）
             bottomBank.graphics.drawRect(0, BOTTOM_BANK_Y, GAME_WIDTH, BANK_HEIGHT, '#8B4513');
-            bottomBank.graphics.drawRect(0, BOTTOM_BANK_Y, GAME_WIDTH, 3, '#654321'); // 底部边缘线
+            // 添加纹理效果（用小圆点模拟泥土质感）
+            for (let i = 0; i < 15; i++) {
+                const x = Math.random() * GAME_WIDTH;
+                const y = BOTTOM_BANK_Y + 5 + Math.random() * (BANK_HEIGHT - 10);
+                bottomBank.graphics.drawCircle(x, y, 3, '#A0522D');
+            }
+            // 顶部边缘线
+            bottomBank.graphics.drawRect(0, BOTTOM_BANK_Y, GAME_WIDTH, 3, '#654321');
             this.addChild(bottomBank);
 
+            // 顶部赭红色河岸（到达区域）
             const topBank = new Laya.Sprite();
             topBank.graphics.drawRect(0, TOP_BANK_Y, GAME_WIDTH, BANK_HEIGHT, '#8B4513');
-            topBank.graphics.drawRect(0, TOP_BANK_Y + BANK_HEIGHT - 3, GAME_WIDTH, 3, '#654321'); // 底部边缘线
+            // 添加纹理效果
+            for (let i = 0; i < 15; i++) {
+                const x = Math.random() * GAME_WIDTH;
+                const y = 5 + Math.random() * (BANK_HEIGHT - 10);
+                topBank.graphics.drawCircle(x, y, 3, '#A0522D');
+            }
+            // 底部边缘线
+            topBank.graphics.drawRect(0, TOP_BANK_Y + BANK_HEIGHT - 3, GAME_WIDTH, 3, '#654321');
             this.addChild(topBank);
         }
 
@@ -1433,7 +1540,7 @@ namespace CCR {
             if (currentY >= BOTTOM_BANK_Y - CHICKEN_HEIGHT) {
                 if (direction === -1) {
                     // 从底部河岸向上跳到第一条河道
-                    targetY = BOTTOM_BANK_Y - BANK_HEIGHT - LANE_GAP + LANE_HEIGHT / 2 - CHICKEN_HEIGHT / 2;
+                    targetY = BOTTOM_BANK_Y - BANK_HEIGHT - LANE_GAP + BOAT_HEIGHT / 2 - CHICKEN_HEIGHT / 2;
                 } else {
                     // 向下跳，保持在底部河岸
                     targetY = BOTTOM_BANK_Y - CHICKEN_HEIGHT;
@@ -1446,7 +1553,7 @@ namespace CCR {
             else if (currentY <= TOP_BANK_Y + BANK_HEIGHT - CHICKEN_HEIGHT) {
                 if (direction === 1) {
                     // 从顶部河岸向下跳到最上面的河道
-                    targetY = TOP_BANK_Y + BANK_HEIGHT + LANE_GAP + LANE_HEIGHT / 2 - CHICKEN_HEIGHT / 2;
+                    targetY = TOP_BANK_Y + BANK_HEIGHT + LANE_GAP + BOAT_HEIGHT / 2 - CHICKEN_HEIGHT / 2;
                 } else {
                     // 向上跳，已经在顶部，尝试跳到岸上
                     targetY = TOP_BANK_Y + BANK_HEIGHT - CHICKEN_HEIGHT;

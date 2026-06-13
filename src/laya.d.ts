@@ -46,6 +46,11 @@ declare namespace Laya {
         bold: boolean;
         stroke: number;
         strokeColor: string;
+        align: string;
+        valign: string;
+        width: number;
+        height: number;
+        leading: number;
     }
 
     class Button extends Sprite {

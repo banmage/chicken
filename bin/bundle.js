@@ -236,9 +236,31 @@ var CCR;
         }
         createView() {
             this.graphics.clear();
-            // 船水平放置
-            this.graphics.drawRect(0, 0, this.boatWidth, CCR.BOAT_HEIGHT, '#8B4513');
-            this.graphics.drawRect(3, 3, this.boatWidth - 6, CCR.BOAT_HEIGHT - 6, '#A0522D');
+            const bambooCount = Math.max(4, Math.floor(this.boatWidth / 18));
+            const bambooGap = 1;
+            const bambooWidth = (this.boatWidth - bambooGap * (bambooCount - 1)) / bambooCount;
+            const raftTop = 2;
+            const raftHeight = CCR.BOAT_HEIGHT - 4;
+            // 竹筏主体：多根并排竹子
+            for (let i = 0; i < bambooCount; i++) {
+                const x = i * (bambooWidth + bambooGap);
+                const color = i % 2 === 0 ? '#8f6b2f' : '#775523';
+                this.graphics.drawEllipse(x + bambooWidth / 2, CCR.BOAT_HEIGHT / 2, bambooWidth / 2, raftHeight / 2, color);
+                this.graphics.drawEllipse(x + bambooWidth / 2, CCR.BOAT_HEIGHT / 2 - 1, bambooWidth / 2 - 1, raftHeight / 2 - 3, '#b38743');
+            }
+            // 横向捆扎绳
+            this.graphics.drawRect(10, 5, this.boatWidth - 20, 2, '#7b4b21');
+            this.graphics.drawRect(10, CCR.BOAT_HEIGHT - 7, this.boatWidth - 20, 2, '#7b4b21');
+            // 绳结和竹节细节
+            const knotXs = [14, this.boatWidth / 2 - 2, this.boatWidth - 18];
+            for (const knotX of knotXs) {
+                this.graphics.drawRect(knotX, 3, 4, 6, '#6a3f1d');
+                this.graphics.drawRect(knotX, CCR.BOAT_HEIGHT - 9, 4, 6, '#6a3f1d');
+            }
+            for (let i = 1; i < bambooCount; i += 2) {
+                const jointX = i * (bambooWidth + bambooGap) - bambooGap / 2;
+                this.graphics.drawRect(jointX, raftTop + 2, 1.5, raftHeight - 4, '#a97b3d');
+            }
             this.size(this.boatWidth, CCR.BOAT_HEIGHT);
         }
         update() {
@@ -272,11 +294,53 @@ var CCR;
         }
         createView() {
             this.graphics.clear();
-            // 绘制鳄鱼形状（椭圆形）
-            this.graphics.drawEllipse(CCR.OBSTACLE_WIDTH / 2, CCR.OBSTACLE_HEIGHT / 2, CCR.OBSTACLE_WIDTH / 2, CCR.OBSTACLE_HEIGHT / 2, '#228B22');
-            // 眼睛
-            this.graphics.drawCircle(CCR.OBSTACLE_WIDTH / 3, CCR.OBSTACLE_HEIGHT / 3, 4, '#006400');
-            this.graphics.drawCircle(CCR.OBSTACLE_WIDTH * 2 / 3, CCR.OBSTACLE_HEIGHT / 3, 4, '#006400');
+            const facingRight = this.direction > 0;
+            // 主体和腹部
+            this.graphics.drawEllipse(CCR.OBSTACLE_WIDTH / 2, CCR.OBSTACLE_HEIGHT / 2 + 1, CCR.OBSTACLE_WIDTH / 2 - 1, CCR.OBSTACLE_HEIGHT / 2 - 2, '#507c32');
+            this.graphics.drawEllipse(CCR.OBSTACLE_WIDTH / 2 + (facingRight ? -1 : 1), CCR.OBSTACLE_HEIGHT / 2 + 5, CCR.OBSTACLE_WIDTH / 2 - 7, 5, '#94b75f');
+            // 尾巴
+            if (facingRight) {
+                this.graphics.drawPoly(4, 16, [0, 0, 8, -6, 8, 6], '#355722');
+            }
+            else {
+                this.graphics.drawPoly(36, 16, [0, 0, -8, -6, -8, 6], '#355722');
+            }
+            // 背脊
+            this.graphics.drawPoly(13, 9, [0, 2, 4, -3, 8, 2], '#27431a');
+            this.graphics.drawPoly(20, 7, [0, 2, 4, -4, 8, 2], '#27431a');
+            this.graphics.drawPoly(27, 9, [0, 2, 4, -3, 8, 2], '#27431a');
+            // 头部轮廓、长吻和根部开口
+            if (facingRight) {
+                this.graphics.drawPoly(10, 11, [0, 3, 4, -1, 10, -4, 20, -5, 27, -3, 29, 0, 24, 2, 14, 3, 6, 4], '#5e9338');
+                this.graphics.drawPoly(10, 17, [0, 0, 6, 1, 14, 4, 22, 8, 28, 8, 25, 10, 16, 10, 8, 8, 0, 5], '#456b2c');
+                this.graphics.drawPoly(12, 16, [0, 0, 6, 0, 13, 2, 20, 3, 18, 5, 11, 5, 5, 4, 0, 2], '#f0d7bf');
+                this.graphics.drawPoly(17, 12, [0, 0, 2, 2, 4, 0], '#fff');
+                this.graphics.drawPoly(22, 11, [0, 0, 2, 2, 4, 0], '#fff');
+                this.graphics.drawPoly(27, 11, [0, 0, 2, 2, 4, 0], '#fff');
+                this.graphics.drawPoly(32, 12, [0, 0, 2, 2, 4, 0], '#fff');
+                this.graphics.drawCircle(13.5, 8.5, 2.9, '#f4da59');
+                this.graphics.drawCircle(14.4, 8.4, 1.3, '#181b12');
+                this.graphics.drawCircle(13.2, 8.1, 0.7, '#fff');
+                this.graphics.drawPoly(10, 6, [0, 3, 4, 0, 9, 1, 6, 4], '#213116');
+                this.graphics.drawCircle(33, 10.5, 1.1, '#29401b');
+            }
+            else {
+                this.graphics.drawPoly(30, 11, [0, 3, -4, -1, -10, -4, -20, -5, -27, -3, -29, 0, -24, 2, -14, 3, -6, 4], '#5e9338');
+                this.graphics.drawPoly(30, 17, [0, 0, -6, 1, -14, 4, -22, 8, -28, 8, -25, 10, -16, 10, -8, 8, 0, 5], '#456b2c');
+                this.graphics.drawPoly(28, 16, [0, 0, -6, 0, -13, 2, -20, 3, -18, 5, -11, 5, -5, 4, 0, 2], '#f0d7bf');
+                this.graphics.drawPoly(23, 12, [0, 0, -2, 2, -4, 0], '#fff');
+                this.graphics.drawPoly(18, 11, [0, 0, -2, 2, -4, 0], '#fff');
+                this.graphics.drawPoly(13, 11, [0, 0, -2, 2, -4, 0], '#fff');
+                this.graphics.drawPoly(8, 12, [0, 0, -2, 2, -4, 0], '#fff');
+                this.graphics.drawCircle(26.5, 8.5, 2.9, '#f4da59');
+                this.graphics.drawCircle(25.6, 8.4, 1.3, '#181b12');
+                this.graphics.drawCircle(25.9, 8.1, 0.7, '#fff');
+                this.graphics.drawPoly(30, 6, [0, 3, -4, 0, -9, 1, -6, 4], '#213116');
+                this.graphics.drawCircle(7, 10.5, 1.1, '#29401b');
+            }
+            // 嘴内阴影和脸颊块
+            this.graphics.drawEllipse(CCR.OBSTACLE_WIDTH / 2 + (facingRight ? 1 : -1), 18, 9, 3, '#7c2d2d');
+            this.graphics.drawEllipse(CCR.OBSTACLE_WIDTH / 2 + (facingRight ? -5 : 5), 15, 6, 4, '#6c9b41');
             this.size(CCR.OBSTACLE_WIDTH, CCR.OBSTACLE_HEIGHT);
         }
         update() {
@@ -303,19 +367,53 @@ var CCR;
             this.lastSafeBoat = null;
             this.safeStayTimer = 0;
             this.isOnBank = true;
+            this.jumpVelocityX = 0;
+            this.jumpAirDrag = Chicken.AIR_DRAG;
+            this.justLanded = false;
+            this.facing = 'right';
             // 确保小鸡初始位置在底部河岸上
             this.pos(CCR.GAME_WIDTH / 2 - CCR.CHICKEN_WIDTH / 2, CCR.BOTTOM_BANK_Y + CCR.BANK_HEIGHT / 2 - CCR.CHICKEN_HEIGHT / 2);
             this.createView();
         }
         createView() {
             this.graphics.clear();
-            this.graphics.drawCircle(CCR.CHICKEN_WIDTH / 2, CCR.CHICKEN_HEIGHT / 2, CCR.CHICKEN_WIDTH / 2, '#FFD700');
-            this.graphics.drawCircle(CCR.CHICKEN_WIDTH / 3, CCR.CHICKEN_HEIGHT / 3, 5, '#000');
-            this.graphics.drawCircle(CCR.CHICKEN_WIDTH * 2 / 3, CCR.CHICKEN_HEIGHT / 3, 5, '#000');
+            const facingRight = this.facing === 'right';
+            const mirrorX = (x) => facingRight ? x : CCR.CHICKEN_WIDTH - x;
+            const mirrorPoints = (points) => {
+                const result = [];
+                for (let i = 0; i < points.length; i += 2) {
+                    result.push(-points[i], points[i + 1]);
+                }
+                return result;
+            };
+            // 侧面身体和头
+            this.graphics.drawEllipse(mirrorX(16), 23, 11, 10, '#ffe082');
+            this.graphics.drawEllipse(mirrorX(24), 15, 9, 9, '#ffd54f');
+            this.graphics.drawEllipse(mirrorX(14), 22, 6, 6, '#fff4c2');
+            // 翅膀
+            this.graphics.drawEllipse(mirrorX(13), 23, 5, 4, '#f6c445');
+            this.graphics.drawEllipse(mirrorX(13), 23, 2.5, 2, '#fff0b0');
+            // 腮红
+            this.graphics.drawCircle(mirrorX(27), 18, 1.8, '#ffb3a7');
+            // 嘴巴
+            this.graphics.drawPoly(mirrorX(30), 17, facingRight ? [0, 0, 7, 2, 0, 5] : mirrorPoints([0, 0, 7, 2, 0, 5]), '#ff9f43');
+            this.graphics.drawPoly(mirrorX(30), 19, facingRight ? [0, 0, 5, 1, 0, 3] : mirrorPoints([0, 0, 5, 1, 0, 3]), '#ff7f2a');
+            // 鸡冠
+            this.graphics.drawCircle(mirrorX(19), 6.5, 2.4, '#f35b57');
+            this.graphics.drawCircle(mirrorX(22.5), 4.8, 2.7, '#f35b57');
+            this.graphics.drawCircle(mirrorX(25.2), 6.4, 2.1, '#f35b57');
+            // 单眼侧脸和高光
+            this.graphics.drawCircle(mirrorX(24.5), 14.5, 2.1, '#2d241c');
+            this.graphics.drawCircle(mirrorX(25.1), 13.8, 0.7, '#fff');
+            // 小脚
+            this.graphics.drawRect(mirrorX(13), 32, 2, 4, '#ff8a65');
+            this.graphics.drawRect(mirrorX(19), 32, 2, 4, '#ff8a65');
             this.size(CCR.CHICKEN_WIDTH, CCR.CHICKEN_HEIGHT);
         }
         moveLeft() {
             if (!this.isJumping) {
+                this.facing = 'left';
+                this.createView();
                 const newX = this.x - Chicken.MOVE_SPEED;
                 if (this.isOnBoat && this.currentBoat) {
                     this.x = Math.max(this.currentBoat.x, newX);
@@ -327,6 +425,8 @@ var CCR;
         }
         moveRight() {
             if (!this.isJumping) {
+                this.facing = 'right';
+                this.createView();
                 const newX = this.x + Chicken.MOVE_SPEED;
                 const maxX = CCR.GAME_WIDTH - CCR.CHICKEN_WIDTH;
                 if (this.isOnBoat && this.currentBoat) {
@@ -337,17 +437,24 @@ var CCR;
                 }
             }
         }
-        jump(targetY, targetBoat) {
+        jump(targetY, extraVelocityX = 0, arcHeightOverride, inheritFactor = 1, airDragOverride) {
             if (this.isJumping)
                 return;
             // 清理之前的跳跃计时器，防止出现多个跳跃动画
             Laya.timer.clearAll(this);
+            const launchBoat = this.currentBoat;
+            const launchVelocityX = this.isOnBoat && launchBoat
+                ? launchBoat.getDirection() * launchBoat.getSpeed() * DifficultyManager.getInstance().getSpeedMultiplier()
+                : 0;
             this.isJumping = true;
             this.isOnBoat = false;
+            this.isOnBank = false;
             this.currentBoat = null;
+            this.lastBoatCenterX = undefined;
+            this.justLanded = false;
             const startY = this.y;
             const duration = CCR.JUMP_DURATION;
-            const arcHeight = 50; // 跳跃弧线高度（小鸡向上跳的最大高度）
+            const arcHeight = arcHeightOverride !== null && arcHeightOverride !== void 0 ? arcHeightOverride : 50; // 跳跃弧线高度（小鸡向上跳的最大高度）
             // 记录跳跃信息，供物理计算
             this.jumpStartY = startY;
             this.jumpTargetY = targetY;
@@ -355,6 +462,8 @@ var CCR;
             this.jumpStartTime = Laya.Browser.now();
             this.jumpDuration = duration;
             this.jumpArcHeight = arcHeight;
+            this.jumpVelocityX = launchVelocityX * inheritFactor + extraVelocityX;
+            this.jumpAirDrag = airDragOverride !== null && airDragOverride !== void 0 ? airDragOverride : Chicken.AIR_DRAG;
             // 使用抛物线动画
             const jumpStep = 16; // 约60fps
             const totalSteps = Math.ceil(duration / jumpStep);
@@ -374,6 +483,9 @@ var CCR;
                     const linearY = startY + (targetY - startY) * t;
                     const arcOffset = arcHeight * 4 * t * (1 - t);
                     this.y = linearY - arcOffset;
+                    this.x += this.jumpVelocityX;
+                    this.x = Math.max(-CCR.CHICKEN_WIDTH, Math.min(CCR.GAME_WIDTH, this.x));
+                    this.jumpVelocityX *= this.jumpAirDrag;
                     // 继续计时器
                     Laya.timer.once(jumpStep, this, doJumpStep);
                 }
@@ -385,12 +497,15 @@ var CCR;
                     this.jumpTargetY = undefined;
                     this.pendingTargetY = undefined; // 清除落点位置
                     this.jumpStartTime = undefined;
-                    // 跳跃结束后，重新检测是否有船在小鸡当前位置
-                    // 因为船可能在跳跃过程中移动了
+                    this.jumpDuration = undefined;
+                    this.jumpArcHeight = undefined;
+                    this.jumpVelocityX = 0;
+                    this.jumpAirDrag = Chicken.AIR_DRAG;
                     this.currentBoat = null;
                     this.isOnBoat = false;
                     this.isOnBank = this.checkOnBank();
                     this.safeStayTimer = 0;
+                    this.justLanded = true;
                 }
             };
             // 开始跳跃动画
@@ -442,6 +557,26 @@ var CCR;
                 this.lastBoatCenterX = undefined;
             }
         }
+        consumeJustLanded() {
+            const landed = this.justLanded;
+            this.justLanded = false;
+            return landed;
+        }
+        faceLeft() {
+            if (this.facing !== 'left') {
+                this.facing = 'left';
+                this.createView();
+            }
+        }
+        faceRight() {
+            if (this.facing !== 'right') {
+                this.facing = 'right';
+                this.createView();
+            }
+        }
+        isStandingOnBoat() {
+            return this.isOnBoat && this.currentBoat !== null;
+        }
         checkOnBank() {
             return this.y >= CCR.BOTTOM_BANK_Y || this.y <= CCR.TOP_BANK_Y + CCR.BANK_HEIGHT;
         }
@@ -476,6 +611,8 @@ var CCR;
                 this.currentBoat = this.lastSafeBoat;
                 this.isOnBoat = true;
                 this.isOnBank = false;
+                this.jumpVelocityX = 0;
+                this.justLanded = false;
             }
             else {
                 this.respawnToStart();
@@ -492,6 +629,8 @@ var CCR;
             this.y = CCR.BOTTOM_BANK_Y + CCR.BANK_HEIGHT / 2 - CCR.CHICKEN_HEIGHT / 2;
             this.isOnBank = true;
             this.safeStayTimer = 0;
+            this.jumpVelocityX = 0;
+            this.justLanded = false;
         }
         destroy() {
             Laya.timer.clearAll(this); // 清理所有计时器
@@ -506,6 +645,7 @@ var CCR;
             this.currentBoat = boat;
             if (boat) {
                 this.isOnBoat = true;
+                this.isOnBank = false;
                 // 只有在不跳跃时才更新位置
                 if (!this.isJumping) {
                     this.y = boat.y + CCR.BOAT_HEIGHT / 2 - CCR.CHICKEN_HEIGHT / 2;
@@ -514,6 +654,11 @@ var CCR;
         }
     }
     Chicken.MOVE_SPEED = 5;
+    Chicken.AIR_DRAG = 0.92;
+    Chicken.HOP_AIR_DRAG = 0.7;
+    Chicken.HOP_ARC_HEIGHT = 72;
+    Chicken.HORIZONTAL_JUMP_SPEED = 2.8;
+    Chicken.HOP_INHERIT_FACTOR = 0.3;
     CCR.Chicken = Chicken;
     // ==================== 简单按钮类 ====================
     class SimpleButton extends Laya.Sprite {
@@ -1053,6 +1198,8 @@ var CCR;
             this.respawnCount = 3;
             this.isPaused = false;
             this.keys = new Set();
+            this.pendingJumpDirection = 0;
+            this.pendingJumpExpiresAt = 0;
             this.size(CCR.GAME_WIDTH, CCR.GAME_HEIGHT);
             this.setupInput();
             this.showMenu();
@@ -1267,30 +1414,13 @@ var CCR;
             this.updateObstacles();
             if (this.chicken) {
                 this.chicken.update(16);
+                this.resolveLanding();
+                if (this.currentState !== GameState.Playing) {
+                    return;
+                }
                 this.checkWin();
                 this.checkLose();
             }
-        }
-        // 检测船是否到达落点位置（用于跳跃过程中）
-        findBoatAtLandingPosition(x, targetY) {
-            const chickenCenterY = targetY + CCR.CHICKEN_HEIGHT / 2;
-            const verticalTolerance = CCR.CHICKEN_HEIGHT; // 1个小鸡高度的容差
-            let closestBoat = null;
-            let minDistance = Infinity;
-            for (const boat of this.boats) {
-                const boatTop = boat.y;
-                const boatBottom = boat.y + CCR.BOAT_HEIGHT;
-                if (chickenCenterY >= boatTop - verticalTolerance && chickenCenterY <= boatBottom + verticalTolerance) {
-                    if (boat.containsPoint(x)) {
-                        const distance = Math.abs(x - boat.getCenterX());
-                        if (distance < minDistance) {
-                            minDistance = distance;
-                            closestBoat = boat;
-                        }
-                    }
-                }
-            }
-            return closestBoat;
         }
         updateStats() {
             this.stats.elapsedTime = Laya.Browser.now() - this.startTime;
@@ -1305,14 +1435,15 @@ var CCR;
                 this.chicken.moveLeft();
             if (this.keys.has('RIGHT'))
                 this.chicken.moveRight();
+            this.resolvePendingJump();
             if (this.keys.has('UP')) {
                 Debug.log('UP key pressed, handling jump up');
-                this.handleJump(-1);
+                this.handleDirectionalJumpInput(-1);
                 this.keys.delete('UP');
             }
             if (this.keys.has('DOWN')) {
                 Debug.log('DOWN key pressed, handling jump down');
-                this.handleJump(1);
+                this.handleDirectionalJumpInput(1);
                 this.keys.delete('DOWN');
             }
             if (this.keys.has('PAUSE')) {
@@ -1320,16 +1451,65 @@ var CCR;
                 this.keys.delete('PAUSE');
             }
         }
-        handleJump(direction) {
+        handleDirectionalJumpInput(direction) {
+            if (!this.chicken || this.chicken.isJumpingState()) {
+                return;
+            }
+            const horizontalIntent = this.keys.has('LEFT') ? -1 : this.keys.has('RIGHT') ? 1 : 0;
+            if (horizontalIntent === 0 && this.chicken.isStandingOnBoat() && direction === -1) {
+                this.pendingJumpDirection = direction;
+                this.pendingJumpExpiresAt = Laya.Browser.now() + GameMain.JUMP_COMBO_WINDOW_MS;
+                return;
+            }
+            this.clearPendingJump();
+            this.handleJump(direction, horizontalIntent, false);
+        }
+        resolvePendingJump() {
+            if (!this.chicken || this.pendingJumpDirection === 0 || this.chicken.isJumpingState()) {
+                return;
+            }
+            const horizontalIntent = this.keys.has('LEFT') ? -1 : this.keys.has('RIGHT') ? 1 : 0;
+            if (horizontalIntent !== 0) {
+                const direction = this.pendingJumpDirection;
+                this.clearPendingJump();
+                this.handleJump(direction, horizontalIntent, false);
+                return;
+            }
+            if (Laya.Browser.now() >= this.pendingJumpExpiresAt) {
+                const direction = this.pendingJumpDirection;
+                this.clearPendingJump();
+                if (this.chicken.isStandingOnBoat()) {
+                    this.handleJump(direction, 0, true);
+                }
+            }
+        }
+        clearPendingJump() {
+            this.pendingJumpDirection = 0;
+            this.pendingJumpExpiresAt = 0;
+        }
+        handleJump(direction, horizontalIntent, isHop) {
             if (!this.chicken || this.chicken.isJumpingState()) {
                 DifficultyManager.getInstance().recordJump(false);
                 return;
+            }
+            if (horizontalIntent < 0) {
+                this.chicken.faceLeft();
+            }
+            else if (horizontalIntent > 0) {
+                this.chicken.faceRight();
             }
             const currentY = this.chicken.y;
             const riverStartY = CCR.TOP_BANK_Y + CCR.BANK_HEIGHT;
             const topLaneTargetY = riverStartY + CCR.LANE_GAP / 2 - CCR.CHICKEN_HEIGHT / 2;
             const bottomLaneTargetY = riverStartY + (CCR.RIVER_LANE_COUNT - 1) * CCR.LANE_GAP + CCR.LANE_GAP / 2 - CCR.CHICKEN_HEIGHT / 2;
+            const extraVelocityX = horizontalIntent * Chicken.HORIZONTAL_JUMP_SPEED;
             let targetY;
+            if (isHop && this.chicken.isStandingOnBoat()) {
+                targetY = currentY;
+                this.chicken.jump(targetY, 0, Chicken.HOP_ARC_HEIGHT, Chicken.HOP_INHERIT_FACTOR, Chicken.HOP_AIR_DRAG);
+                this.stats.jumpCount++;
+                return;
+            }
             // 如果小鸡在底部河岸上（y >= BOTTOM_BANK_Y - CHICKEN_HEIGHT）
             if (currentY >= CCR.BOTTOM_BANK_Y - CCR.CHICKEN_HEIGHT) {
                 if (direction === -1) {
@@ -1353,10 +1533,8 @@ var CCR;
                 else {
                     // 向上跳，已经在顶部，尝试跳到岸上
                     targetY = CCR.TOP_BANK_Y + CCR.BANK_HEIGHT - CCR.CHICKEN_HEIGHT;
-                    this.chicken.jump(targetY, null);
+                    this.chicken.jump(targetY, extraVelocityX);
                     this.stats.jumpCount++;
-                    DifficultyManager.getInstance().recordJump(true);
-                    this.stats.successfulJumpCount++;
                     return;
                 }
             }
@@ -1369,21 +1547,8 @@ var CCR;
                     targetY = CCR.TOP_BANK_Y + CCR.BANK_HEIGHT - CCR.CHICKEN_HEIGHT;
                 }
             }
-            const targetBoat = this.findBoatAtPosition(this.chicken.getCenterX(), targetY);
-            // 如果找到船，重新计算targetY，让小鸡位于船的上下居中位置
-            if (targetBoat) {
-                targetY = targetBoat.y + CCR.BOAT_HEIGHT / 2 - CCR.CHICKEN_HEIGHT / 2;
-            }
-            this.chicken.jump(targetY, targetBoat);
+            this.chicken.jump(targetY, extraVelocityX);
             this.stats.jumpCount++;
-            // 判断是否成功（跳到船上或到达顶部岸上）
-            if (targetBoat || targetY < CCR.TOP_BANK_Y + CCR.BANK_HEIGHT) {
-                DifficultyManager.getInstance().recordJump(true);
-                this.stats.successfulJumpCount++;
-            }
-            else {
-                DifficultyManager.getInstance().recordJump(false);
-            }
         }
         findBoatAtPosition(x, targetY) {
             let closestBoat = null;
@@ -1425,16 +1590,34 @@ var CCR;
                 this.onWin();
             }
         }
+        resolveLanding() {
+            if (!this.chicken || !this.chicken.consumeJustLanded()) {
+                return;
+            }
+            if (this.chicken.isOnBankState()) {
+                DifficultyManager.getInstance().recordJump(true);
+                this.stats.successfulJumpCount++;
+                return;
+            }
+            const boat = this.findBoatAtPosition(this.chicken.getCenterX(), this.chicken.y);
+            if (boat) {
+                this.chicken.setCurrentBoat(boat);
+                DifficultyManager.getInstance().recordJump(true);
+                this.stats.successfulJumpCount++;
+                return;
+            }
+            DifficultyManager.getInstance().recordJump(false);
+            this.onLose();
+        }
         checkLose() {
             if (!this.chicken)
                 return;
-            // 检测障碍物碰撞（任何状态下都需要检测）
-            if (this.chicken.checkObstacleCollision(this.obstacles)) {
-                this.onLose();
-                return;
-            }
             // 如果小鸡在船上且没有跳跃，不会落水（只要不起跳，就不会落水）
             if (this.chicken.isOnBoatState() && !this.chicken.isJumpingState()) {
+                if (this.chicken.checkObstacleCollision(this.obstacles)) {
+                    this.onLose();
+                    return;
+                }
                 // 只有当船带小鸡超出屏幕边缘时才失败
                 if (this.chicken.x < -CCR.CHICKEN_WIDTH || this.chicken.x > CCR.GAME_WIDTH) {
                     this.onLose();
@@ -1452,6 +1635,10 @@ var CCR;
             }
             // 如果正在跳跃，不检测落水
             if (this.chicken.isJumpingState()) {
+                return;
+            }
+            if (this.chicken.checkObstacleCollision(this.obstacles)) {
+                this.onLose();
                 return;
             }
             // 如果已经在岸上，不检测落水
@@ -1546,6 +1733,7 @@ var CCR;
             this.gameUI = null;
         }
     }
+    GameMain.JUMP_COMBO_WINDOW_MS = 140;
     CCR.GameMain = GameMain;
     // ==================== 启动游戏 ====================
     function initGame() {

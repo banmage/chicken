@@ -1,0 +1,22 @@
+# 依赖
+node_modules/
+
+# 编译输出（bin目录包含编译后的js，但不需要提交每次编译结果）
+# bin/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# 日志
+*.log
+
+# 临时文件
+*.tmp
+*.bak

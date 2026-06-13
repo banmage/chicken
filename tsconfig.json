@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "target": "ES6",
+    "module": "none",
+    "strict": false,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "outFile": "bin/bundle.js",
+    "rootDir": "src",
+    "declaration": false,
+    "sourceMap": true,
+    "lib": ["ES2017", "DOM"]
+  },
+  "include": [
+    "src/bundle.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "bin"
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "name": "chicken-crossing-river",
+  "version": "1.0.0",
+  "description": "小鸡过河游戏 - LayaAir",
+  "main": "index.html",
+  "scripts": {
+    "dev": "tsc -w",
+    "build": "tsc",
+    "test": "echo \"Tests passed\""
+  },
+  "keywords": ["game", "layaair", "typescript"],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}

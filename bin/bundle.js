@@ -6,12 +6,12 @@ var CCR;
     // ==================== 常量定义 ====================
     CCR.GAME_WIDTH = 1000;
     CCR.GAME_HEIGHT = 600;
-    // 水平河岸（底部出发、顶部到达）
-    CCR.BOTTOM_BANK_Y = 560;
+    // 场景固定为 8 个等高带：顶部岸 1 条 + 河道 6 条 + 底部岸 1 条
     CCR.TOP_BANK_Y = 0;
-    CCR.BANK_HEIGHT = 40;
-    // 河道设置（垂直排列，水平移动）
     CCR.LANE_GAP = 75;
+    CCR.BANK_HEIGHT = CCR.LANE_GAP;
+    CCR.RIVER_LANE_COUNT = 6;
+    CCR.BOTTOM_BANK_Y = CCR.TOP_BANK_Y + CCR.BANK_HEIGHT + CCR.RIVER_LANE_COUNT * CCR.LANE_GAP;
     // 小鸡设置
     CCR.CHICKEN_WIDTH = 36;
     CCR.CHICKEN_HEIGHT = 36;
@@ -304,7 +304,7 @@ var CCR;
             this.safeStayTimer = 0;
             this.isOnBank = true;
             // 确保小鸡初始位置在底部河岸上
-            this.pos(CCR.GAME_WIDTH / 2 - CCR.CHICKEN_WIDTH / 2, CCR.BOTTOM_BANK_Y - CCR.CHICKEN_HEIGHT);
+            this.pos(CCR.GAME_WIDTH / 2 - CCR.CHICKEN_WIDTH / 2, CCR.BOTTOM_BANK_Y + CCR.BANK_HEIGHT / 2 - CCR.CHICKEN_HEIGHT / 2);
             this.createView();
         }
         createView() {
@@ -489,7 +489,7 @@ var CCR;
             this.currentBoat = null;
             this.lastSafeBoat = null;
             this.x = CCR.GAME_WIDTH / 2 - CCR.CHICKEN_WIDTH / 2;
-            this.y = CCR.GAME_HEIGHT - CCR.CHICKEN_HEIGHT - 20;
+            this.y = CCR.BOTTOM_BANK_Y + CCR.BANK_HEIGHT / 2 - CCR.CHICKEN_HEIGHT / 2;
             this.isOnBank = true;
             this.safeStayTimer = 0;
         }
@@ -521,21 +521,30 @@ var CCR;
             super();
             this._label = '';
             this._enabled = true;
+            this.buttonWidth = 120;
+            this.buttonHeight = 40;
             this._label = label;
             this.createView();
         }
         createView() {
             this.graphics.clear();
             const bgColor = this._enabled ? '#4CAF50' : '#888';
-            this.graphics.drawRect(0, 0, 120, 40, bgColor);
-            this.graphics.drawRect(2, 2, 116, 36, this._enabled ? '#45a049' : '#666');
-            this.size(120, 40);
-            this.labelText = new Laya.Text();
+            this.graphics.drawRect(0, 0, this.buttonWidth, this.buttonHeight, bgColor);
+            this.graphics.drawRect(3, 3, this.buttonWidth - 6, this.buttonHeight - 6, this._enabled ? '#45a049' : '#666');
+            super.size(this.buttonWidth, this.buttonHeight);
+            if (!this.labelText) {
+                this.labelText = new Laya.Text();
+                this.labelText.fontSize = 16;
+                this.labelText.color = '#FFF';
+                this.labelText.bold = true;
+                this.labelText.align = 'center';
+                this.labelText.valign = 'middle';
+                this.addChild(this.labelText);
+            }
             this.labelText.text = this._label;
-            this.labelText.fontSize = 16;
-            this.labelText.color = '#FFF';
-            this.labelText.pos(10, 10);
-            this.addChild(this.labelText);
+            this.labelText.width = this.buttonWidth;
+            this.labelText.height = this.buttonHeight;
+            this.labelText.pos(0, 0);
         }
         set label(value) {
             this._label = value;
@@ -552,7 +561,9 @@ var CCR;
             return this._enabled;
         }
         size(width, height) {
-            super.size(width, height);
+            this.buttonWidth = width;
+            this.buttonHeight = height;
+            this.createView();
             return this;
         }
     }
@@ -562,80 +573,94 @@ var CCR;
         constructor() {
             super();
             this.menuChickenAngle = 0;
-            this.menuChickenY = 290;
+            this.menuChickenY = 390;
             this.createUI();
         }
         createUI() {
-            // 深色渐变背景
-            this.graphics.drawRect(0, 0, CCR.GAME_WIDTH, CCR.GAME_HEIGHT, '#1a1a2e');
-            // 顶部装饰条
-            this.graphics.drawRect(0, 0, CCR.GAME_WIDTH, 100, '#16213e');
-            // 底部装饰条
-            this.graphics.drawRect(0, CCR.GAME_HEIGHT - 100, CCR.GAME_WIDTH, 100, '#16213e');
-            // 左侧装饰线
-            this.graphics.drawRect(0, 80, 6, CCR.GAME_HEIGHT - 160, '#e94560');
-            // 右侧装饰线
-            this.graphics.drawRect(CCR.GAME_WIDTH - 6, 80, 6, CCR.GAME_HEIGHT - 160, '#e94560');
-            // 标题背景
-            this.graphics.drawRect(200, 85, 600, 90, '#0f3460');
-            this.graphics.drawRect(195, 80, 610, 5, '#e94560'); // 标题上装饰线
-            // 标题
+            this.graphics.drawRect(0, 0, CCR.GAME_WIDTH, CCR.GAME_HEIGHT, '#f2efe5');
+            this.graphics.drawRect(0, 0, CCR.GAME_WIDTH, 170, '#cfe8f7');
+            this.graphics.drawRect(0, CCR.GAME_HEIGHT - 120, CCR.GAME_WIDTH, 120, '#d8c3a5');
+            this.graphics.drawRect(60, 60, 880, 480, '#fffaf0');
+            this.graphics.drawRect(72, 72, 856, 456, '#f7f1e1');
+            this.graphics.drawRect(90, 90, 820, 6, '#c56b3d');
+            this.graphics.drawRect(90, 504, 820, 6, '#c56b3d');
+            const leftPanel = new Laya.Sprite();
+            leftPanel.graphics.drawRect(0, 0, 360, 340, '#fff4d6');
+            leftPanel.graphics.drawRect(0, 0, 360, 8, '#ff9f1c');
+            leftPanel.pos(110, 120);
+            this.addChild(leftPanel);
+            const rightPanel = new Laya.Sprite();
+            rightPanel.graphics.drawRect(0, 0, 360, 340, '#f6ead6');
+            rightPanel.graphics.drawRect(0, 0, 360, 8, '#8b5e34');
+            rightPanel.pos(530, 120);
+            this.addChild(rightPanel);
             this.titleText = new Laya.Text();
             this.titleText.text = '小鸡过河';
-            this.titleText.fontSize = 54;
-            this.titleText.color = '#FFD700';
+            this.titleText.fontSize = 56;
+            this.titleText.color = '#8b3f1f';
             this.titleText.bold = true;
-            this.titleText.pos(250, 100);
+            this.titleText.pos(150, 130);
             this.addChild(this.titleText);
-            // 副标题
             const subtitle = new Laya.Text();
-            subtitle.text = 'Chicken Crossing River';
-            subtitle.fontSize = 16;
-            subtitle.color = '#7ec8e3';
-            subtitle.pos(370, 155);
+            subtitle.text = '穿过六条河道，安全抵达对岸';
+            subtitle.fontSize = 22;
+            subtitle.color = '#5b6c5d';
+            subtitle.pos(152, 190);
             this.addChild(subtitle);
-            // 创建动画小鸡
+            const intro = new Laya.Text();
+            intro.text = '观察木板方向，抓准节奏起跳。\n辅助模式可保留 3 次复活机会。';
+            intro.fontSize = 24;
+            intro.leading = 14;
+            intro.color = '#4d4d4d';
+            intro.pos(150, 255);
+            intro.width = 280;
+            this.addChild(intro);
             this.menuChicken = new Laya.Sprite();
-            this.menuChicken.pos(CCR.GAME_WIDTH / 2, 290);
+            this.menuChicken.pos(330, 390);
             this.drawMenuChicken(this.menuChicken);
             this.addChild(this.menuChicken);
-            // 启动小鸡动画
             Laya.timer.frameLoop(1, this, this.animateMenuChicken);
-            // 按钮区域背景
-            this.graphics.drawRect(320, 350, 360, 200, '#0f3460');
-            this.graphics.drawRect(315, 345, 370, 5, '#e94560');
+            const panelTitle = new Laya.Text();
+            panelTitle.text = '开始冒险';
+            panelTitle.fontSize = 30;
+            panelTitle.bold = true;
+            panelTitle.color = '#6a4026';
+            panelTitle.pos(650, 150);
+            this.addChild(panelTitle);
             this.startButton = new SimpleButton('开始游戏');
-            this.startButton.size(220, 60);
-            this.startButton.pos(390, 370);
+            this.startButton.size(240, 60);
+            this.startButton.pos(590, 215);
             this.startButton.on(Laya.Event.CLICK, this, this.onStartClick);
             this.addChild(this.startButton);
             this.assistMode = StorageHelper.getAssistMode();
             this.assistToggle = new SimpleButton(this.assistMode ? '辅助模式: 开启' : '辅助模式: 关闭');
-            this.assistToggle.size(160, 45);
-            this.startButton.pos(390, 370);
+            this.assistToggle.size(240, 52);
+            this.assistToggle.pos(590, 293);
             this.assistToggle.on(Laya.Event.CLICK, this, this.onAssistToggle);
             this.addChild(this.assistToggle);
-            // 重新定位辅助按钮
-            this.assistToggle.x = 420;
-            this.assistToggle.y = 450;
             const highestLevel = StorageHelper.getHighestLevel();
             this.levelText = new Laya.Text();
             this.levelText.text = `最高关卡: ${highestLevel}`;
-            this.levelText.fontSize = 22;
-            this.levelText.color = '#7ec8e3';
-            this.levelText.pos(420, 505);
+            this.levelText.fontSize = 24;
+            this.levelText.color = '#5c4b3b';
+            this.levelText.pos(590, 370);
             this.addChild(this.levelText);
             this.helpButton = new SimpleButton('游戏说明');
-            this.helpButton.size(120, 35);
-            this.helpButton.pos(440, 545);
+            this.helpButton.size(240, 46);
+            this.helpButton.pos(590, 415);
             this.helpButton.on(Laya.Event.CLICK, this, this.onHelpClick);
             this.addChild(this.helpButton);
-            // 版本信息
+            const footer = new Laya.Text();
+            footer.text = 'WASD / 方向键移动，P 暂停';
+            footer.fontSize = 18;
+            footer.color = '#7a6856';
+            footer.pos(590, 478);
+            this.addChild(footer);
             const version = new Laya.Text();
             version.text = 'v1.0.0';
-            version.fontSize = 12;
-            version.color = '#555';
-            version.pos(CCR.GAME_WIDTH - 50, CCR.GAME_HEIGHT - 25);
+            version.fontSize = 14;
+            version.color = '#7a6856';
+            version.pos(835, 478);
             this.addChild(version);
         }
         drawMenuChicken(sprite) {
@@ -654,9 +679,8 @@ var CCR;
             sprite.graphics.drawEllipse(0, -38, 10, 18, '#FF4444');
         }
         animateMenuChicken() {
-            // 左右摆动动画
             this.menuChickenAngle += 0.04;
-            this.menuChicken.x = CCR.GAME_WIDTH / 2 + Math.sin(this.menuChickenAngle) * 60;
+            this.menuChicken.x = 330 + Math.sin(this.menuChickenAngle) * 26;
             this.menuChicken.y = this.menuChickenY + Math.sin(this.menuChickenAngle * 2.5) * 10;
         }
         onStartClick() {
@@ -1116,14 +1140,13 @@ var CCR;
             const riverStartY = CCR.TOP_BANK_Y + CCR.BANK_HEIGHT;
             const riverEndY = CCR.BOTTOM_BANK_Y;
             const riverHeight = riverEndY - riverStartY;
-            // 计算实际河道数量
-            const actualLanes = Math.max(1, Math.floor((riverHeight - CCR.LANE_GAP) / CCR.LANE_GAP));
+            const laneHeight = riverHeight / CCR.RIVER_LANE_COUNT;
             // 使用两种深浅相近的蓝色交替
             const colors = ['#1E90FF', '#2894E8'];
-            for (let laneIndex = 0; laneIndex < actualLanes; laneIndex++) {
-                const laneStartY = riverStartY + laneIndex * CCR.LANE_GAP;
+            for (let laneIndex = 0; laneIndex < CCR.RIVER_LANE_COUNT; laneIndex++) {
+                const laneStartY = riverStartY + laneIndex * laneHeight;
                 const colorIndex = laneIndex % colors.length;
-                this.graphics.drawRect(0, laneStartY, CCR.GAME_WIDTH, CCR.LANE_GAP, colors[colorIndex]);
+                this.graphics.drawRect(0, laneStartY, CCR.GAME_WIDTH, laneHeight, colors[colorIndex]);
             }
         }
         createBanks() {
@@ -1155,14 +1178,11 @@ var CCR;
         createLanes(config) {
             const difficulty = DifficultyManager.getInstance();
             const boatLength = config.boatLength * difficulty.getLengthMultiplier();
-            // 计算河道数量（根据河水区域大小）
             const riverStartY = CCR.TOP_BANK_Y + CCR.BANK_HEIGHT;
-            const riverEndY = CCR.BOTTOM_BANK_Y;
-            const riverHeight = riverEndY - riverStartY;
-            const actualLanes = Math.max(1, Math.floor((riverHeight - CCR.LANE_GAP) / CCR.LANE_GAP));
-            for (let laneIndex = 0; laneIndex < actualLanes; laneIndex++) {
+            const laneHeight = CCR.LANE_GAP;
+            for (let laneIndex = 0; laneIndex < CCR.RIVER_LANE_COUNT; laneIndex++) {
                 // 计算河道Y位置（从顶部河岸向下排列，与背景绘制一致）
-                const laneStartY = riverStartY + laneIndex * CCR.LANE_GAP;
+                const laneStartY = riverStartY + laneIndex * laneHeight;
                 // 确定这条河道的船的方向（单向）
                 const laneDirection = laneIndex % 2 === 0 ? 1 : -1;
                 // 每条河道都生成船（最后一条也必须有）
@@ -1188,7 +1208,7 @@ var CCR;
                     // 添加到已生成位置列表
                     spawnedPositions.push(x);
                     // 创建船，确保船在河道中央（Y方向）
-                    const boatY = laneStartY + CCR.LANE_GAP / 2 - CCR.BOAT_HEIGHT / 2;
+                    const boatY = laneStartY + laneHeight / 2 - CCR.BOAT_HEIGHT / 2;
                     const boat = new Boat(x, boatY, boatLength, config.boatSpeed, laneDirection);
                     this.boats.push(boat);
                     this.addChild(boat);
@@ -1197,7 +1217,7 @@ var CCR;
                     for (let i = 0; i < Math.min(config.obstacles, 3); i++) {
                         const x = 100 + i * 300 + laneIndex * 50;
                         const direction = (laneIndex + i + 1) % 2 === 0 ? 1 : -1;
-                        const obstacle = new Obstacle(x, laneStartY + CCR.LANE_GAP / 2 - CCR.OBSTACLE_HEIGHT / 2, config.boatSpeed * 0.8, direction);
+                        const obstacle = new Obstacle(x, laneStartY + laneHeight / 2 - CCR.OBSTACLE_HEIGHT / 2, config.boatSpeed * 0.8, direction);
                         this.obstacles.push(obstacle);
                         this.addChild(obstacle);
                     }
@@ -1306,16 +1326,19 @@ var CCR;
                 return;
             }
             const currentY = this.chicken.y;
+            const riverStartY = CCR.TOP_BANK_Y + CCR.BANK_HEIGHT;
+            const topLaneTargetY = riverStartY + CCR.LANE_GAP / 2 - CCR.CHICKEN_HEIGHT / 2;
+            const bottomLaneTargetY = riverStartY + (CCR.RIVER_LANE_COUNT - 1) * CCR.LANE_GAP + CCR.LANE_GAP / 2 - CCR.CHICKEN_HEIGHT / 2;
             let targetY;
             // 如果小鸡在底部河岸上（y >= BOTTOM_BANK_Y - CHICKEN_HEIGHT）
             if (currentY >= CCR.BOTTOM_BANK_Y - CCR.CHICKEN_HEIGHT) {
                 if (direction === -1) {
                     // 从底部河岸向上跳到第一条河道
-                    targetY = CCR.BOTTOM_BANK_Y - CCR.BANK_HEIGHT - CCR.LANE_GAP + CCR.BOAT_HEIGHT / 2 - CCR.CHICKEN_HEIGHT / 2;
+                    targetY = bottomLaneTargetY;
                 }
                 else {
                     // 向下跳，保持在底部河岸
-                    targetY = CCR.BOTTOM_BANK_Y - CCR.CHICKEN_HEIGHT;
+                    targetY = CCR.BOTTOM_BANK_Y + CCR.BANK_HEIGHT / 2 - CCR.CHICKEN_HEIGHT / 2;
                     DifficultyManager.getInstance().recordJump(false);
                     this.stats.jumpCount++;
                     return;
@@ -1325,7 +1348,7 @@ var CCR;
             else if (currentY <= CCR.TOP_BANK_Y + CCR.BANK_HEIGHT - CCR.CHICKEN_HEIGHT) {
                 if (direction === 1) {
                     // 从顶部河岸向下跳到最上面的河道
-                    targetY = CCR.TOP_BANK_Y + CCR.BANK_HEIGHT + CCR.LANE_GAP + CCR.BOAT_HEIGHT / 2 - CCR.CHICKEN_HEIGHT / 2;
+                    targetY = topLaneTargetY;
                 }
                 else {
                     // 向上跳，已经在顶部，尝试跳到岸上

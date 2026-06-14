@@ -109,16 +109,7 @@ namespace CCR {
     }
 
     export class Debug {
-        private static enabled: boolean = true;
-
-        public static setEnabled(enabled: boolean): void {
-            this.enabled = enabled;
-        }
-
         public static log(...args: unknown[]): void {
-            if (this.enabled) {
-                console.log('[CCR]', ...args);
-            }
         }
 
         public static error(...args: unknown[]): void {
@@ -327,75 +318,146 @@ namespace CCR {
     }
 
     export class Obstacle extends Laya.Sprite {
+        private static readonly MOUTH_SWING_SPEED = 0.18;
+        private static readonly MOUTH_OPEN_OFFSET = 6;
+
         private speed: number;
         private direction: number;
+        private body!: Laya.Sprite;
+        private upperJaw!: Laya.Sprite;
+        private lowerJaw!: Laya.Sprite;
+        private mouthPhase: number;
 
         constructor(x: number, y: number, speed: number, direction: number) {
             super();
             this.speed = speed;
             this.direction = direction;
+            this.mouthPhase = Math.random() * Math.PI * 2;
             this.pos(x, y);
             this.createView();
         }
 
         private createView(): void {
-            this.graphics.clear();
-            const facingRight = this.direction > 0;
-
-            // 主体和腹部
-            this.graphics.drawEllipse(OBSTACLE_WIDTH / 2, OBSTACLE_HEIGHT / 2 + 1, OBSTACLE_WIDTH / 2 - 1, OBSTACLE_HEIGHT / 2 - 2, '#507c32');
-            this.graphics.drawEllipse(OBSTACLE_WIDTH / 2 + (facingRight ? -1 : 1), OBSTACLE_HEIGHT / 2 + 5, OBSTACLE_WIDTH / 2 - 7, 5, '#94b75f');
-
-            // 尾巴
-            if (facingRight) {
-                this.graphics.drawPoly(4, 16, [0, 0, 8, -6, 8, 6], '#355722');
-            } else {
-                this.graphics.drawPoly(36, 16, [0, 0, -8, -6, -8, 6], '#355722');
-            }
-
-            // 背脊
-            this.graphics.drawPoly(13, 9, [0, 2, 4, -3, 8, 2], '#27431a');
-            this.graphics.drawPoly(20, 7, [0, 2, 4, -4, 8, 2], '#27431a');
-            this.graphics.drawPoly(27, 9, [0, 2, 4, -3, 8, 2], '#27431a');
-
-            // 头部轮廓、长吻和根部开口
-            if (facingRight) {
-                this.graphics.drawPoly(10, 11, [0, 3, 4, -1, 10, -4, 20, -5, 27, -3, 29, 0, 24, 2, 14, 3, 6, 4], '#5e9338');
-                this.graphics.drawPoly(10, 17, [0, 0, 6, 1, 14, 4, 22, 8, 28, 8, 25, 10, 16, 10, 8, 8, 0, 5], '#456b2c');
-                this.graphics.drawPoly(12, 16, [0, 0, 6, 0, 13, 2, 20, 3, 18, 5, 11, 5, 5, 4, 0, 2], '#f0d7bf');
-                this.graphics.drawPoly(17, 12, [0, 0, 2, 2, 4, 0], '#fff');
-                this.graphics.drawPoly(22, 11, [0, 0, 2, 2, 4, 0], '#fff');
-                this.graphics.drawPoly(27, 11, [0, 0, 2, 2, 4, 0], '#fff');
-                this.graphics.drawPoly(32, 12, [0, 0, 2, 2, 4, 0], '#fff');
-                this.graphics.drawCircle(13.5, 8.5, 2.9, '#f4da59');
-                this.graphics.drawCircle(14.4, 8.4, 1.3, '#181b12');
-                this.graphics.drawCircle(13.2, 8.1, 0.7, '#fff');
-                this.graphics.drawPoly(10, 6, [0, 3, 4, 0, 9, 1, 6, 4], '#213116');
-                this.graphics.drawCircle(33, 10.5, 1.1, '#29401b');
-            } else {
-                this.graphics.drawPoly(30, 11, [0, 3, -4, -1, -10, -4, -20, -5, -27, -3, -29, 0, -24, 2, -14, 3, -6, 4], '#5e9338');
-                this.graphics.drawPoly(30, 17, [0, 0, -6, 1, -14, 4, -22, 8, -28, 8, -25, 10, -16, 10, -8, 8, 0, 5], '#456b2c');
-                this.graphics.drawPoly(28, 16, [0, 0, -6, 0, -13, 2, -20, 3, -18, 5, -11, 5, -5, 4, 0, 2], '#f0d7bf');
-                this.graphics.drawPoly(23, 12, [0, 0, -2, 2, -4, 0], '#fff');
-                this.graphics.drawPoly(18, 11, [0, 0, -2, 2, -4, 0], '#fff');
-                this.graphics.drawPoly(13, 11, [0, 0, -2, 2, -4, 0], '#fff');
-                this.graphics.drawPoly(8, 12, [0, 0, -2, 2, -4, 0], '#fff');
-                this.graphics.drawCircle(26.5, 8.5, 2.9, '#f4da59');
-                this.graphics.drawCircle(25.6, 8.4, 1.3, '#181b12');
-                this.graphics.drawCircle(25.9, 8.1, 0.7, '#fff');
-                this.graphics.drawPoly(30, 6, [0, 3, -4, 0, -9, 1, -6, 4], '#213116');
-                this.graphics.drawCircle(7, 10.5, 1.1, '#29401b');
-            }
-
-            // 嘴内阴影和脸颊块
-            this.graphics.drawEllipse(OBSTACLE_WIDTH / 2 + (facingRight ? 1 : -1), 18, 9, 3, '#7c2d2d');
-            this.graphics.drawEllipse(OBSTACLE_WIDTH / 2 + (facingRight ? -5 : 5), 15, 6, 4, '#6c9b41');
             this.size(OBSTACLE_WIDTH, OBSTACLE_HEIGHT);
+            this.graphics.clear();
+            while (this.numChildren > 0) {
+                this.removeChild(this.getChildAt(0));
+            }
+
+            this.body = new Laya.Sprite();
+            this.drawBody(this.body.graphics, this.direction > 0);
+            this.addChild(this.body);
+
+            this.upperJaw = new Laya.Sprite();
+            this.drawUpperJaw(this.upperJaw.graphics, this.direction > 0);
+            this.addChild(this.upperJaw);
+
+            this.lowerJaw = new Laya.Sprite();
+            this.drawLowerJaw(this.lowerJaw.graphics, this.direction > 0);
+            this.addChild(this.lowerJaw);
+
+            this.updateMouthAnimation();
+        }
+
+        private drawBody(graphics: Laya.Graphics, facingRight: boolean): void {
+            graphics.clear();
+            const mirrorX = (x: number): number => facingRight ? x : OBSTACLE_WIDTH - x;
+
+            graphics.drawEllipse(20, 17, 16, 10, '#6f9f3f');
+            graphics.drawEllipse(23, 19, 11, 4, '#c7d28b');
+            if (facingRight) {
+                graphics.drawPoly(3, 16, [0, 0, 9, -7, 8, 6], '#5d8532');
+            } else {
+                graphics.drawPoly(37, 16, [0, 0, -9, -7, -8, 6], '#5d8532');
+            }
+
+            graphics.drawPoly(mirrorX(22), 7, [0, 3, 3, -2, 6, 3], '#405e22');
+            graphics.drawPoly(mirrorX(28), 6, [0, 3, 3, -3, 6, 3], '#405e22');
+            graphics.drawPoly(mirrorX(34), 8, [0, 3, 3, -2, 6, 3], '#405e22');
+
+            graphics.drawPoly(mirrorX(18), 22, [0, 0, facingRight ? -3 : 3, 6, facingRight ? 1 : -1, 4, facingRight ? 3 : -3, 0], '#5e8435');
+            graphics.drawPoly(mirrorX(30), 21, [0, 0, facingRight ? -3 : 3, 6, facingRight ? 1 : -1, 4, facingRight ? 3 : -3, 0], '#5e8435');
+
+            graphics.drawCircle(mirrorX(12), 20, 1.3, '#507729');
+            graphics.drawCircle(mirrorX(25), 11, 1.2, '#507729');
+            graphics.drawCircle(mirrorX(31), 13, 1.1, '#507729');
+        }
+
+        private drawUpperJaw(graphics: Laya.Graphics, facingRight: boolean): void {
+            graphics.clear();
+            const mirrorX = (x: number): number => facingRight ? x : 31 - x;
+            const jawPoints = [
+                0, 7,
+                5, 1,
+                15, 0,
+                26, 2,
+                31, 5,
+                24, 8,
+                8, 9
+            ];
+            const mirroredPoints: number[] = [];
+            for (let i = 0; i < jawPoints.length; i += 2) {
+                mirroredPoints.push(mirrorX(jawPoints[i]), jawPoints[i + 1]);
+            }
+
+            this.upperJaw.pos(facingRight ? 6 : 4, 6);
+            graphics.drawPoly(0, 0, mirroredPoints, '#7dc443');
+            graphics.drawCircle(mirrorX(10), 1.5, 3.2, '#7dc443');
+            graphics.drawCircle(mirrorX(11), 1.6, 1.3, '#1d2910');
+            graphics.drawCircle(mirrorX(24), 4.1, 0.8, '#36531a');
+            graphics.drawCircle(mirrorX(27), 4.6, 0.8, '#36531a');
+            graphics.drawCircle(mirrorX(31), 5.2, 1, '#203014');
+        }
+
+        private drawLowerJaw(graphics: Laya.Graphics, facingRight: boolean): void {
+            graphics.clear();
+            const mirrorX = (x: number): number => facingRight ? x : 30 - x;
+            const jawPoints = [
+                0, 0,
+                8, 5,
+                19, 6,
+                28, 4,
+                30, 2,
+                19, 11,
+                4, 9
+            ];
+            const mouthPoints = [
+                5, 1,
+                11, 5,
+                18, 5,
+                25, 3,
+                19, 8,
+                7, 7
+            ];
+            const mirroredJawPoints: number[] = [];
+            const mirroredMouthPoints: number[] = [];
+            for (let i = 0; i < jawPoints.length; i += 2) {
+                mirroredJawPoints.push(mirrorX(jawPoints[i]), jawPoints[i + 1]);
+            }
+            for (let i = 0; i < mouthPoints.length; i += 2) {
+                mirroredMouthPoints.push(mirrorX(mouthPoints[i]), mouthPoints[i + 1]);
+            }
+
+            this.lowerJaw.pos(facingRight ? 7 : 6, 14);
+            graphics.drawPoly(0, 0, mirroredJawPoints, '#f1c986');
+            graphics.drawPoly(0, 0, mirroredMouthPoints, '#d04d4a');
+
+            for (let i = 0; i < 4; i++) {
+                const toothX = mirrorX(8 + i * 5);
+                if (facingRight) {
+                    graphics.drawPoly(toothX, 1, [0, 0, 1.5, 3.5, 3, 0], '#fff9ef');
+                } else {
+                    graphics.drawPoly(toothX, 1, [0, 0, -1.5, 3.5, -3, 0], '#fff9ef');
+                }
+            }
         }
 
         public update(): void {
-            // 障碍物在水平方向移动
-            this.x += this.direction * this.speed;
+            const difficulty = DifficultyManager.getInstance();
+            const actualSpeed = this.speed * difficulty.getSpeedMultiplier();
+            this.x += this.direction * actualSpeed;
+            this.updateMouthAnimation();
+
             if (this.x + OBSTACLE_WIDTH < 0) {
                 this.x = GAME_WIDTH;
             } else if (this.x > GAME_WIDTH) {
@@ -405,6 +467,13 @@ namespace CCR {
 
         public getBounds(): { x: number; y: number; width: number; height: number } {
             return { x: this.x, y: this.y, width: OBSTACLE_WIDTH, height: OBSTACLE_HEIGHT };
+        }
+
+        private updateMouthAnimation(): void {
+            this.mouthPhase += Obstacle.MOUTH_SWING_SPEED;
+            const openRatio = (Math.sin(this.mouthPhase) + 1) / 2;
+            this.upperJaw.y = 6 - openRatio * 1.5;
+            this.lowerJaw.y = 14 + openRatio * Obstacle.MOUTH_OPEN_OFFSET;
         }
     }
 
@@ -1435,15 +1504,15 @@ namespace CCR {
         private setupInput(): void {
             Laya.stage.on(Laya.Event.KEY_DOWN, this, this.onKeyDown);
             Laya.stage.on(Laya.Event.KEY_UP, this, this.onKeyUp);
-            Debug.log('Input setup complete, stage listeners attached');
         }
 
         private onKeyDown(e: Laya.Event): void {
-            Debug.log('KeyDown event:', e.keyCode);
+            if (this.tryHandleSecretLevelJump(e)) {
+                return;
+            }
             const keyStr = this.getKeyString(e.keyCode);
             if (keyStr) {
                 this.keys.add(keyStr);
-                Debug.log('Added key:', keyStr);
             }
         }
 
@@ -1511,20 +1580,18 @@ namespace CCR {
         }
 
         private createBackground(): void {
-            // 绘制整个游戏场景的背景（河水区域）
-            // 从顶部河岸下方开始，到底部河岸上方结束
             const riverStartY = TOP_BANK_Y + BANK_HEIGHT;
             const riverEndY = BOTTOM_BANK_Y;
             const riverHeight = riverEndY - riverStartY;
             const laneHeight = riverHeight / RIVER_LANE_COUNT;
-            
-            // 使用两种深浅相近的蓝色交替
-            const colors = ['#1E90FF', '#2894E8'];
-            
+            const colors = ['#0b7fab', '#1696b5', '#207dc2', '#2b97d3', '#0f88c0', '#36a6c9'];
+
             for (let laneIndex = 0; laneIndex < RIVER_LANE_COUNT; laneIndex++) {
                 const laneStartY = riverStartY + laneIndex * laneHeight;
-                const colorIndex = laneIndex % colors.length;
-                this.graphics.drawRect(0, laneStartY, GAME_WIDTH, laneHeight, colors[colorIndex]);
+                const laneColor = colors[laneIndex % colors.length];
+                this.graphics.drawRect(0, laneStartY, GAME_WIDTH, laneHeight, laneColor);
+                this.graphics.drawRect(0, laneStartY, GAME_WIDTH, 3, '#d8f3ff');
+                this.graphics.drawRect(0, laneStartY + laneHeight - 4, GAME_WIDTH, 4, '#0d5777');
             }
         }
 
@@ -1683,12 +1750,10 @@ namespace CCR {
             if (this.keys.has('RIGHT')) this.chicken.moveRight();
             this.resolvePendingJump();
             if (this.keys.has('UP')) {
-                Debug.log('UP key pressed, handling jump up');
                 this.handleDirectionalJumpInput(-1);
                 this.keys.delete('UP');
             }
             if (this.keys.has('DOWN')) {
-                Debug.log('DOWN key pressed, handling jump down');
                 this.handleDirectionalJumpInput(1);
                 this.keys.delete('DOWN');
             }
@@ -2012,6 +2077,44 @@ namespace CCR {
             this.chicken = null;
             this.gameUI = null;
         }
+
+        private tryHandleSecretLevelJump(e: Laya.Event): boolean {
+            const keyboardEvent = e as unknown as { keyCode: number; altKey?: boolean };
+            if (!keyboardEvent.altKey) {
+                return false;
+            }
+
+            let targetLevel: number | null = null;
+            if (keyboardEvent.keyCode >= 49 && keyboardEvent.keyCode <= 57) {
+                targetLevel = keyboardEvent.keyCode - 48;
+            } else if (keyboardEvent.keyCode === 48) {
+                targetLevel = 10;
+            }
+
+            if (targetLevel === null) {
+                return false;
+            }
+
+            const maxLevel = LevelManager.getInstance().getTotalLevels();
+            if (targetLevel < 1 || targetLevel > maxLevel) {
+                return true;
+            }
+
+            this.jumpToLevel(targetLevel);
+            return true;
+        }
+
+        private jumpToLevel(level: number): void {
+            LevelManager.getInstance().setCurrentLevel(level);
+            this.keys.clear();
+            this.pendingJumpDirection = 0;
+            this.pendingJumpExpiresAt = 0;
+            this.isPaused = false;
+            this.hideHelp();
+            this.clearPopups();
+            this.clearGame();
+            this.initLevel(level);
+        }
     }
 
     // ==================== 启动游戏 ====================
@@ -2025,10 +2128,8 @@ namespace CCR {
             alignV: 'middle',
             alignH: 'center'
         }).then(() => {
-            Debug.log('Laya initialized');
             const gameMain = new GameMain();
             Laya.stage.addChild(gameMain);
-            Debug.log('Game started');
         }).catch((err: unknown) => {
             Debug.error('Init failed:', err);
         });
